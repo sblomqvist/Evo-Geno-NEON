@@ -731,7 +731,8 @@ library(phytools)
 library(ggnewscale)
 library(ggtreeExtra)
 library(ggstar)
-library(zoo)</code></pre>
+library(zoo)
+library(usethis)</code></pre>
 <pre class="r"><code>NEON_MAGs &lt;- read_csv(&quot;data/NEON/GOLD_Study_ID_Gs0161344_NEON_2024_4_21.csv&quot;) %&gt;% 
   select(-c(`GOLD Study ID`, `Bin Methods`, `Created By`, `Date Added`, `Bin Lineage`)) %&gt;% 
   mutate(&quot;Assembly Type&quot; = case_when(`Genome Name` == &quot;NEON combined assembly&quot; ~ `Genome Name`,
