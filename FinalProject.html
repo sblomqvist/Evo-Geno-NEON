@@ -550,6 +550,11 @@ Found at Niwot Ridge</a></li>
 <li><a href="#all-combined" id="toc-all-combined">All Combined</a></li>
 <li><a href="#all-individual" id="toc-all-individual">All
 Individual</a></li>
+<li><a href="#verrucomicrobiota-coassemblies" id="toc-verrucomicrobiota-coassemblies">Verrucomicrobiota
+Coassemblies</a></li>
+<li><a href="#verrucomicrobiota-individual" id="toc-verrucomicrobiota-individual">Verrucomicrobiota
+Individual</a></li>
+<li><a href="#niwot-ridge-individual" id="toc-niwot-ridge-individual">Niwot Ridge Individual</a></li>
 </ul></li>
 <li><a href="#verrucomicrobiota-properties" id="toc-verrucomicrobiota-properties">Verrucomicrobiota Properties</a>
 <ul>
@@ -731,8 +736,7 @@ library(phytools)
 library(ggnewscale)
 library(ggtreeExtra)
 library(ggstar)
-library(zoo)
-library(usethis)</code></pre>
+library(zoo)</code></pre>
 <pre class="r"><code>NEON_MAGs &lt;- read_csv(&quot;data/NEON/GOLD_Study_ID_Gs0161344_NEON_2024_4_21.csv&quot;) %&gt;% 
   select(-c(`GOLD Study ID`, `Bin Methods`, `Created By`, `Date Added`, `Bin Lineage`)) %&gt;% 
   mutate(&quot;Assembly Type&quot; = case_when(`Genome Name` == &quot;NEON combined assembly&quot; ~ `Genome Name`,
@@ -989,29 +993,44 @@ ggplot(aes(x = `elevation`, y = `Sample Name`, color = `Phylum`)) +
 <h2>Genome/Assembly Data</h2>
 <div id="sankey-plots" class="section level3">
 <h3>Sankey Plots</h3>
-<pre class="r"><code>NEON_MAGs_sankey &lt;- read_csv(&quot;data/NEON/GOLD_Study_ID_Gs0161344_NEON_2024_4_21.csv&quot;) %&gt;% 
-  select(-c(`GOLD Study ID`, `Bin Methods`, `Created By`, `Date Added`)) %&gt;% 
+<pre class="r"><code>NEON_MAGs_test &lt;- read_csv(&quot;data/NEON/GOLD_Study_ID_Gs0161344_NEON_2024_4_21.csv&quot;) %&gt;% 
+  # remove columns that are not needed for data analysis
+  select(-c(`GOLD Study ID`, `Bin Methods`, `Created By`, `Date Added`, `Bin Lineage`)) %&gt;% 
+  # create a new column with the Assembly Type
   mutate(&quot;Assembly Type&quot; = case_when(`Genome Name` == &quot;NEON combined assembly&quot; ~ `Genome Name`,
                             TRUE ~ &quot;Individual&quot;)) %&gt;% 
   mutate_at(&quot;Assembly Type&quot;, str_replace, &quot;NEON combined assembly&quot;, &quot;Combined&quot;) %&gt;% 
-  separate(`GTDB-Tk Taxonomy Lineage`, c(&quot;Domain&quot;, &quot;Phylum&quot;, &quot;Class&quot;, &quot;Order&quot;, &quot;Family&quot;, &quot;Genus&quot;), &quot;; &quot;, remove = FALSE) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;d__&quot;, &quot;&quot;) %&gt;%  
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;p__&quot;, &quot;&quot;) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;c__&quot;, &quot;&quot;) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;o__&quot;, &quot;&quot;) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;f__&quot;, &quot;&quot;) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;g__&quot;, &quot;&quot;) %&gt;% 
+  mutate_at(&quot;GTDB-Tk Taxonomy Lineage&quot;, str_replace, &quot;s__&quot;, &quot;&quot;) %&gt;%
+  separate(`GTDB-Tk Taxonomy Lineage`, c(&quot;Domain&quot;, &quot;Phylum&quot;, &quot;Class&quot;, &quot;Order&quot;, &quot;Family&quot;, &quot;Genus&quot;, &quot;Species&quot;), &quot;;&quot;, remove = FALSE) %&gt;% 
+  mutate_at(&quot;Domain&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Phylum&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Class&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Order&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Family&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Genus&quot;, na_if,&quot;&quot;) %&gt;% 
+  mutate_at(&quot;Species&quot;, na_if,&quot;&quot;) %&gt;% 
+  
+  # Get rid of the the common string &quot;Soil microbial communities from &quot;
   mutate_at(&quot;Genome Name&quot;, str_replace, &quot;Terrestrial soil microbial communities from &quot;, &quot;&quot;) %&gt;% 
+  # Use the first `-` to split the column in two
   separate(`Genome Name`, c(&quot;Site&quot;,&quot;Sample Name&quot;), &quot; - &quot;) %&gt;% 
+  # Get rid of the the common string &quot;S-comp-1&quot;
   mutate_at(&quot;Sample Name&quot;, str_replace, &quot;-comp-1&quot;, &quot;&quot;) %&gt;%
+  # separate the Sample Name into Site ID and plot info
   separate(`Sample Name`, c(&quot;Site ID&quot;,&quot;subplot.layer.date&quot;), &quot;_&quot;, remove = FALSE,) %&gt;% 
+  # separate the plot info into 3 columns
   separate(`subplot.layer.date`, c(&quot;Subplot&quot;, &quot;Layer&quot;, &quot;Date&quot;), &quot;-&quot;) </code></pre>
-<pre class="r"><code>NEON_MAGs_ind &lt;- NEON_MAGs_sankey %&gt;% 
+<pre class="r"><code>NEON_MAGs_ind &lt;- NEON_MAGs %&gt;% 
   filter(`Assembly Type` == &quot;Individual&quot;) 
 
-NEON_MAGs_co &lt;- NEON_MAGs_sankey %&gt;% 
-  filter(`Assembly Type` == &quot;Combined&quot;)</code></pre>
-<pre class="r"><code>NEON_MAGs_ind_Verruco &lt;- NEON_MAGs_sankey %&gt;% 
-  filter(`Assembly Type` == &quot;Individual&quot;) %&gt;% 
-  filter(Phylum == &quot;Verrucomicrobiota&quot;)
-
-NEON_MAGs_co_Verruco &lt;- NEON_MAGs_sankey %&gt;% 
-  filter(`Assembly Type` == &quot;Combined&quot;) %&gt;% 
-  filter(Phylum == &quot;Verrucomicrobiota&quot;)</code></pre>
+NEON_MAGs_co &lt;- NEON_MAGs %&gt;% 
+  filter(`Assembly Type` == &quot;Combined&quot;) </code></pre>
 <div id="all-combined" class="section level4">
 <h4>All Combined</h4>
 <pre class="r"><code>sankey_data2 &lt;- NEON_MAGs_co %&gt;% 
@@ -1023,16 +1042,16 @@ NEON_MAGs_co_Verruco &lt;- NEON_MAGs_sankey %&gt;%
 sankey_data2[] &lt;- t(apply(sankey_data2, 1, zoo::na.locf))
 
 
-
 sankey_data2 &lt;- sankey_data2 %&gt;% 
-  unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;;&#39;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) 
+    unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;; &#39;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Archaea&quot;, &quot;d__Archaea&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Bacteria&quot;, &quot;d__Bacteria&quot;) %&gt;%  
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|p__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|c__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|o__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|f__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|g__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|s__&quot;)
 
 
 sankey_data_s &lt;- sankey_data2
@@ -1048,7 +1067,7 @@ sankey_data_f$classification &lt;- sub(&quot;\\|g__.*&quot;, &quot;&quot;, sanke
 sankey_data_o$classification &lt;- sub(&quot;\\|f__.*&quot;, &quot;&quot;, sankey_data_o$classification)  
 sankey_data_c$classification &lt;- sub(&quot;\\|o__.*&quot;, &quot;&quot;, sankey_data_c$classification)  
 sankey_data_p$classification &lt;- sub(&quot;\\|c__.*&quot;, &quot;&quot;, sankey_data_p$classification)  
-sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)  
+sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)   
 
 sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f, sankey_data_o, sankey_data_c, sankey_data_p, sankey_data_d) %&gt;% 
   mutate(classification = as.factor(classification)) %&gt;% 
@@ -1057,9 +1076,9 @@ sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f,
   rename(`#SampleID` = `classification`) %&gt;% 
   rename(`Metaphlan2_Analysis` = `n`) 
 
-write_tsv(sankey_data_allTaxa, &quot;data/NEON/NEON_MAG_co_pavian.txt&quot;)</code></pre>
-<pre class="r"><code>knitr::include_url(&quot;images/all_combined.html&quot;)</code></pre>
-<iframe src="images/all_combined.html" width="672" height="400px" data-external="1">
+write_tsv(sankey_data_allTaxa, &quot;data/NEON/all_co_pavian.txt&quot;)</code></pre>
+<pre class="r"><code>knitr::include_url(&quot;images/sankey_all_co.txt.html&quot;)</code></pre>
+<iframe src="images/sankey_all_co.txt.html" width="672" height="400px" data-external="1">
 </iframe>
 </div>
 <div id="all-individual" class="section level4">
@@ -1073,16 +1092,16 @@ write_tsv(sankey_data_allTaxa, &quot;data/NEON/NEON_MAG_co_pavian.txt&quot;)</co
 sankey_data2[] &lt;- t(apply(sankey_data2, 1, zoo::na.locf))
 
 
-
 sankey_data2 &lt;- sankey_data2 %&gt;% 
-  unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;;&#39;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) %&gt;% 
-  mutate_at(&quot;classification&quot;, str_replace, &quot;;&quot;, &quot;|&quot;) 
+    unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;; &#39;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Archaea&quot;, &quot;d__Archaea&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Bacteria&quot;, &quot;d__Bacteria&quot;) %&gt;%  
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|p__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|c__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|o__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|f__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|g__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|s__&quot;)
 
 
 sankey_data_s &lt;- sankey_data2
@@ -1098,7 +1117,7 @@ sankey_data_f$classification &lt;- sub(&quot;\\|g__.*&quot;, &quot;&quot;, sanke
 sankey_data_o$classification &lt;- sub(&quot;\\|f__.*&quot;, &quot;&quot;, sankey_data_o$classification)  
 sankey_data_c$classification &lt;- sub(&quot;\\|o__.*&quot;, &quot;&quot;, sankey_data_c$classification)  
 sankey_data_p$classification &lt;- sub(&quot;\\|c__.*&quot;, &quot;&quot;, sankey_data_p$classification)  
-sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)  
+sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)   
 
 sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f, sankey_data_o, sankey_data_c, sankey_data_p, sankey_data_d) %&gt;% 
   mutate(classification = as.factor(classification)) %&gt;% 
@@ -1107,9 +1126,162 @@ sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f,
   rename(`#SampleID` = `classification`) %&gt;% 
   rename(`Metaphlan2_Analysis` = `n`) 
 
-write_tsv(sankey_data_allTaxa, &quot;data/NEON/MAGs_pavian_ind&quot;)</code></pre>
-<pre class="r"><code>knitr::include_url(&quot;images/all_individual.html&quot;)</code></pre>
-<iframe src="images/all_individual.html" width="672" height="400px" data-external="1">
+write_tsv(sankey_data_allTaxa, &quot;data/NEON/all_ind_pavian.txt&quot;)</code></pre>
+<pre class="r"><code>knitr::include_url(&quot;images/sankey_all_ind.txt.html&quot;)</code></pre>
+<iframe src="images/sankey_all_ind.txt.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+<div id="verrucomicrobiota-coassemblies" class="section level4">
+<h4>Verrucomicrobiota Coassemblies</h4>
+<pre class="r"><code>sankey_data2 &lt;- NEON_MAGs_co %&gt;% 
+  filter(Phylum == &quot;Verrucomicrobiota&quot;) %&gt;% 
+  select(`GTDB-Tk Taxonomy Lineage`) %&gt;% 
+  replace_na(list(`GTDB-Tk Taxonomy Lineage` = &#39;Archaea&#39;)) %&gt;% 
+  separate(`GTDB-Tk Taxonomy Lineage`, c(&quot;Domain&quot;, &quot;Phylum&quot;, &quot;Class&quot;, &quot;Order&quot;, &quot;Family&quot;, &quot;Genus&quot;, &quot;Species&quot;), &quot;;&quot;) 
+
+
+sankey_data2[] &lt;- t(apply(sankey_data2, 1, zoo::na.locf))
+
+
+sankey_data2 &lt;- sankey_data2 %&gt;% 
+    unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;; &#39;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Archaea&quot;, &quot;d__Archaea&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Bacteria&quot;, &quot;d__Bacteria&quot;) %&gt;%  
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|p__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|c__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|o__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|f__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|g__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|s__&quot;)
+
+
+sankey_data_s &lt;- sankey_data2
+sankey_data_g &lt;- sankey_data2
+sankey_data_f &lt;- sankey_data2
+sankey_data_o &lt;- sankey_data2
+sankey_data_c &lt;- sankey_data2
+sankey_data_p &lt;- sankey_data2
+sankey_data_d &lt;- sankey_data2
+
+sankey_data_g$classification &lt;- sub(&quot;\\|s__.*&quot;, &quot;&quot;, sankey_data_g$classification)  
+sankey_data_f$classification &lt;- sub(&quot;\\|g__.*&quot;, &quot;&quot;, sankey_data_f$classification)  
+sankey_data_o$classification &lt;- sub(&quot;\\|f__.*&quot;, &quot;&quot;, sankey_data_o$classification)  
+sankey_data_c$classification &lt;- sub(&quot;\\|o__.*&quot;, &quot;&quot;, sankey_data_c$classification)  
+sankey_data_p$classification &lt;- sub(&quot;\\|c__.*&quot;, &quot;&quot;, sankey_data_p$classification)  
+sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)   
+
+sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f, sankey_data_o, sankey_data_c, sankey_data_p, sankey_data_d) %&gt;% 
+  mutate(classification = as.factor(classification)) %&gt;% 
+  count(classification) %&gt;% 
+
+  rename(`#SampleID` = `classification`) %&gt;% 
+  rename(`Metaphlan2_Analysis` = `n`) 
+
+write_tsv(sankey_data_allTaxa, &quot;data/NEON/verruco_co_pavian.txt&quot;)</code></pre>
+<pre class="r"><code>knitr::include_url(&quot;images/sankey_verruco_co.txt.html&quot;)</code></pre>
+<iframe src="images/sankey_verruco_co.txt.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+<div id="verrucomicrobiota-individual" class="section level4">
+<h4>Verrucomicrobiota Individual</h4>
+<pre class="r"><code>sankey_data2 &lt;- NEON_MAGs_ind %&gt;% 
+  filter(Phylum == &quot;Verrucomicrobiota&quot;) %&gt;% 
+  select(`GTDB-Tk Taxonomy Lineage`) %&gt;% 
+  replace_na(list(`GTDB-Tk Taxonomy Lineage` = &#39;Archaea&#39;)) %&gt;% 
+  separate(`GTDB-Tk Taxonomy Lineage`, c(&quot;Domain&quot;, &quot;Phylum&quot;, &quot;Class&quot;, &quot;Order&quot;, &quot;Family&quot;, &quot;Genus&quot;, &quot;Species&quot;), &quot;;&quot;) 
+
+
+sankey_data2[] &lt;- t(apply(sankey_data2, 1, zoo::na.locf))
+
+
+sankey_data2 &lt;- sankey_data2 %&gt;% 
+    unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;; &#39;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Archaea&quot;, &quot;d__Archaea&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Bacteria&quot;, &quot;d__Bacteria&quot;) %&gt;%  
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|p__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|c__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|o__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|f__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|g__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|s__&quot;)
+
+
+sankey_data_s &lt;- sankey_data2
+sankey_data_g &lt;- sankey_data2
+sankey_data_f &lt;- sankey_data2
+sankey_data_o &lt;- sankey_data2
+sankey_data_c &lt;- sankey_data2
+sankey_data_p &lt;- sankey_data2
+sankey_data_d &lt;- sankey_data2
+
+sankey_data_g$classification &lt;- sub(&quot;\\|s__.*&quot;, &quot;&quot;, sankey_data_g$classification)  
+sankey_data_f$classification &lt;- sub(&quot;\\|g__.*&quot;, &quot;&quot;, sankey_data_f$classification)  
+sankey_data_o$classification &lt;- sub(&quot;\\|f__.*&quot;, &quot;&quot;, sankey_data_o$classification)  
+sankey_data_c$classification &lt;- sub(&quot;\\|o__.*&quot;, &quot;&quot;, sankey_data_c$classification)  
+sankey_data_p$classification &lt;- sub(&quot;\\|c__.*&quot;, &quot;&quot;, sankey_data_p$classification)  
+sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)   
+
+sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f, sankey_data_o, sankey_data_c, sankey_data_p, sankey_data_d) %&gt;% 
+  mutate(classification = as.factor(classification)) %&gt;% 
+  count(classification) %&gt;% 
+
+  rename(`#SampleID` = `classification`) %&gt;% 
+  rename(`Metaphlan2_Analysis` = `n`) 
+
+write_tsv(sankey_data_allTaxa, &quot;data/NEON/verruco_ind_pavian.txt&quot;)</code></pre>
+<pre class="r"><code>knitr::include_url(&quot;images/sankey_verruco_ind.txt.html&quot;)</code></pre>
+<iframe src="images/sankey_verruco_ind.txt.html" width="672" height="400px" data-external="1">
+</iframe>
+</div>
+<div id="niwot-ridge-individual" class="section level4">
+<h4>Niwot Ridge Individual</h4>
+<pre class="r"><code>sankey_data2 &lt;- NEON_MAGs_ind %&gt;% 
+  filter(`Site ID` == &quot;NIWO&quot;) %&gt;% 
+  select(`GTDB-Tk Taxonomy Lineage`) %&gt;% 
+  replace_na(list(`GTDB-Tk Taxonomy Lineage` = &#39;Archaea&#39;)) %&gt;% 
+  separate(`GTDB-Tk Taxonomy Lineage`, c(&quot;Domain&quot;, &quot;Phylum&quot;, &quot;Class&quot;, &quot;Order&quot;, &quot;Family&quot;, &quot;Genus&quot;, &quot;Species&quot;), &quot;;&quot;) 
+
+
+sankey_data2[] &lt;- t(apply(sankey_data2, 1, zoo::na.locf))
+
+
+sankey_data2 &lt;- sankey_data2 %&gt;% 
+    unite(col = &quot;classification&quot;, c(Domain, Phylum, Class, Order, Family, Genus, Species), sep=&#39;; &#39;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Archaea&quot;, &quot;d__Archaea&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;Bacteria&quot;, &quot;d__Bacteria&quot;) %&gt;%  
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|p__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|c__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|o__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|f__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|g__&quot;) %&gt;% 
+  mutate_at(&quot;classification&quot;, str_replace, &quot;; &quot;, &quot;|s__&quot;)
+
+
+sankey_data_s &lt;- sankey_data2
+sankey_data_g &lt;- sankey_data2
+sankey_data_f &lt;- sankey_data2
+sankey_data_o &lt;- sankey_data2
+sankey_data_c &lt;- sankey_data2
+sankey_data_p &lt;- sankey_data2
+sankey_data_d &lt;- sankey_data2
+
+sankey_data_g$classification &lt;- sub(&quot;\\|s__.*&quot;, &quot;&quot;, sankey_data_g$classification)  
+sankey_data_f$classification &lt;- sub(&quot;\\|g__.*&quot;, &quot;&quot;, sankey_data_f$classification)  
+sankey_data_o$classification &lt;- sub(&quot;\\|f__.*&quot;, &quot;&quot;, sankey_data_o$classification)  
+sankey_data_c$classification &lt;- sub(&quot;\\|o__.*&quot;, &quot;&quot;, sankey_data_c$classification)  
+sankey_data_p$classification &lt;- sub(&quot;\\|c__.*&quot;, &quot;&quot;, sankey_data_p$classification)  
+sankey_data_d$classification &lt;- sub(&quot;\\|p__.*&quot;, &quot;&quot;, sankey_data_d$classification)   
+
+sankey_data_allTaxa &lt;- bind_rows(sankey_data_s, sankey_data_g, sankey_data_f, sankey_data_o, sankey_data_c, sankey_data_p, sankey_data_d) %&gt;% 
+  mutate(classification = as.factor(classification)) %&gt;% 
+  count(classification) %&gt;% 
+
+  rename(`#SampleID` = `classification`) %&gt;% 
+  rename(`Metaphlan2_Analysis` = `n`) 
+
+write_tsv(sankey_data_allTaxa, &quot;data/NEON/niwot_ind_pavian.txt&quot;)</code></pre>
+<pre class="r"><code>knitr::include_url(&quot;images/sankey_niwot_ind.txt.html&quot;)</code></pre>
+<iframe src="images/sankey_niwot_ind.txt.html" width="672" height="400px" data-external="1">
 </iframe>
 </div>
 </div>
