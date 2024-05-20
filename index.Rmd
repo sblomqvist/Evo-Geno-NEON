@@ -1,6 +1,6 @@
 ---
 title: "NEON Data Analysis of Verrucomicrobiota and Niwot Ridge"
-subtitle: "Evo-Geno Final Project Spring 2024"
+subtitle: "Evo-Geno Final Report Spring 2024"
 author: "Michelle Le, Olivia Mooradian, Jason Chen, Sofia Blomqvist"
 output: 
   html_document:
